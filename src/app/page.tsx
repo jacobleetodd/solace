@@ -1,115 +1,31 @@
-'use client';
+import { Advocates } from '@/components/Advocates';
+import { getAdvocates } from '@/queries/advocates';
 
-import { TableAdvocates } from '@/components/AdvocatesTable';
-import {
-  Container,
-  FormControl,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material';
-import { useEffect, useState } from 'react';
+export type AdvocatePageParams = {
+  page?: string;
+  search?: string;
+};
 
-export default function Home() {
-  const [advocates, setAdvocates] = useState([]);
-  const [filteredAdvocates, setFilteredAdvocates] = useState([]);
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: AdvocatePageParams;
+}) {
+  const limit = 5;
+  const page = Number(searchParams.page ?? 0);
+  const search = searchParams.search ?? '';
 
-  useEffect(() => {
-    console.log('fetching advocates...');
-    fetch('/api/advocates').then((response) => {
-      response.json().then((jsonResponse) => {
-        setAdvocates(jsonResponse.data);
-        setFilteredAdvocates(jsonResponse.data);
-      });
-    });
-  }, []);
+  const advocateResponse = await getAdvocates({
+    limit,
+    offset: page * limit,
+    search,
+  });
 
-  const onChange = (e) => {
-    const searchTerm = e.target.value;
-
-    document.getElementById('search-term').innerHTML = searchTerm;
-
-    console.log('filtering advocates...');
-    const filteredAdvocates = advocates.filter((advocate) => {
-      return (
-        advocate.firstName.includes(searchTerm) ||
-        advocate.lastName.includes(searchTerm) ||
-        advocate.city.includes(searchTerm) ||
-        advocate.degree.includes(searchTerm) ||
-        advocate.specialties.includes(searchTerm)
-        // advocate.yearsOfExperience.includes(searchTerm)
-      );
-    });
-
-    setFilteredAdvocates(filteredAdvocates);
-  };
-
-  const onClick = () => {
-    console.log(advocates);
-    setFilteredAdvocates(advocates);
-  };
+  if (advocateResponse === null) {
+    throw Error('Could not load the advocates!');
+  }
 
   return (
-    <Container maxWidth="xl">
-      <Stack alignItems="start" height="100vh" py={2} spacing={2} width="100%">
-        <Typography variant="h3">Solace Advocates</Typography>
-        <FormControl margin="normal">
-          <TextField
-            aria-labelledby="name-label"
-            id="search"
-            name="search"
-            label="Search"
-            size="small"
-            variant="outlined"
-          />
-        </FormControl>
-        <TableAdvocates advocates={advocates} rowCount={15} />
-      </Stack>
-    </Container>
-    // <main style={{ margin: "24px" }}>
-    //   <h1>Solace Advocates</h1>
-    //   <br />
-    //   <br />
-    //   <div>
-    //     <p>Search</p>
-    //     <p>
-    //       Searching for: <span id="search-term"></span>
-    //     </p>
-    //     <input style={{ border: "1px solid black" }} onChange={onChange} />
-    //     <button onClick={onClick}>Reset Search</button>
-    //   </div>
-    //   <br />
-    //   <br />
-    //   <table>
-    //     <thead>
-    //       <th>First Name</th>
-    //       <th>Last Name</th>
-    //       <th>City</th>
-    //       <th>Degree</th>
-    //       <th>Specialties</th>
-    //       <th>Years of Experience</th>
-    //       <th>Phone Number</th>
-    //     </thead>
-    //     <tbody>
-    //       {filteredAdvocates.map((advocate) => {
-    //         return (
-    //           <tr>
-    //             <td>{advocate.firstName}</td>
-    //             <td>{advocate.lastName}</td>
-    //             <td>{advocate.city}</td>
-    //             <td>{advocate.degree}</td>
-    //             <td>
-    //               {advocate.specialties.map((s) => (
-    //                 <div>{s}</div>
-    //               ))}
-    //             </td>
-    //             <td>{advocate.yearsOfExperience}</td>
-    //             <td>{advocate.phoneNumber}</td>
-    //           </tr>
-    //         );
-    //       })}
-    //     </tbody>
-    //   </table>
-    // </main>
+    <Advocates advocateResponse={advocateResponse} params={searchParams} />
   );
 }
